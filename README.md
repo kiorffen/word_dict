@@ -44,8 +44,8 @@ go run main.go
 
 ## Default User
 
-- Username: haiyu
-- Password: Tang777
+- Username: root
+- Password: 1234567
 
 ## API Endpoints
 
