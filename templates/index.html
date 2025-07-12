@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Dictionary</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Form -->
+        <div id="loginForm" v-if="!isLoggedIn">
+            <h2>Login</h2>
+            <form @submit.prevent="login">
+                <input type="text" v-model="loginForm.username" placeholder="Username" required>
+                <input type="password" v-model="loginForm.password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" v-if="isLoggedIn">
+            <div class="header">
+                <h2>Word Dictionary</h2>
+                <div class="user-actions">
+                    <button @click="showChangePasswordForm = true">Change Password</button>
+                    <button @click="logout">Logout</button>
+                </div>
+            </div>
+
+            <!-- Add Word Form -->
+            <div class="add-word-form">
+                <input type="text" v-model="newWord.word" placeholder="Word" @input="handleWordInput">
+                <input type="text" v-model="newWord.definition" placeholder="Definition">
+                <div class="form-actions">
+                    <button @click="addWord" :disabled="!newWord.word">Add Word</button>
+                </div>
+            </div>
+
+            <!-- Word List -->
+            <div class="word-list">
+                <div v-for="word in words" :key="word.ID" class="word-item">
+                    <div v-if="editingWord && editingWord.ID === word.ID">
+                        <input v-model="editingWord.word" placeholder="Word">
+                        <input v-model="editingWord.phonetic" placeholder="Phonetic">
+                        <input v-model="editingWord.definition" placeholder="Definition">
+                        <button @click="saveEdit">Save</button>
+                        <button @click="cancelEdit">Cancel</button>
+                    </div>
+                    <div v-else>
+                        <div class="word-header">
+                            <div class="word-info">
+                                <h3>{{ word.word }}</h3>
+                                <span class="phonetic" v-if="word.phonetic">[{{ word.phonetic }}]</span>
+                                <button class="play-button" @click="playAudio(word)" v-if="word.audioURL">
+                                    <span class="play-icon">🔊</span>
+                                </button>
+                            </div>
+                            <div class="word-actions">
+                                <button @click="startEdit(word)">Edit</button>
+                                <button @click="deleteWord(word.ID)">Delete</button>
+                            </div>
+                        </div>
+                        <p class="definition">{{ word.definition }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change Password Modal -->
+        <div class="modal" v-if="showChangePasswordForm">
+            <div class="modal-content">
+                <h3>Change Password</h3>
+                <form @submit.prevent="changePassword">
+                    <input type="password" v-model="changePasswordForm.oldPassword" placeholder="Old Password" required>
+                    <input type="password" v-model="changePasswordForm.newPassword" placeholder="New Password" required>
+                    <div class="modal-actions">
+                        <button type="submit">Change Password</button>
+                        <button type="button" @click="showChangePasswordForm = false">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>
