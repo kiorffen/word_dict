@@ -8,6 +8,8 @@ import (
     _ "github.com/go-sql-driver/mysql"
     "golang.org/x/crypto/bcrypt"
     "net/http"
+    "net/url"
+    "strings"
 )
 
 var db *gorm.DB
@@ -156,7 +158,8 @@ func getWords(c *gin.Context) {
 }
 
 func fetchWordInfo(word string) (phonetic string, audioURL string, err error) {
-    resp, err := http.Get("https://api.dictionaryapi.dev/api/v2/entries/en/" + word)
+    // 首先尝试从 DictionaryAPI 获取数据
+    resp, err := http.Get("https://api.dictionaryapi.dev/api/v2/entries/en/" + url.QueryEscape(word))
     if err != nil {
         return "", "", err
     }
@@ -168,29 +171,43 @@ func fetchWordInfo(word string) (phonetic string, audioURL string, err error) {
 
     var result []struct {
         Phonetics []struct {
-            Text string `json:"text"`
+            Text  string `json:"text"`
             Audio string `json:"audio"`
         } `json:"phonetics"`
+        Phonetic string `json:"phonetic"`
     }
 
     if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
         return "", "", err
     }
 
-    if len(result) > 0 && len(result[0].Phonetics) > 0 {
+    // 获取音标和音频URL
+    if len(result) > 0 {
+        // 优先使用 Phonetics 数组中的数据
         for _, p := range result[0].Phonetics {
-            if p.Audio != "" {
+            if p.Audio != "" && audioURL == "" {
                 audioURL = p.Audio
             }
-            if p.Text != "" {
+            if p.Text != "" && phonetic == "" {
                 phonetic = p.Text
             }
         }
+        
+        // 如果 Phonetics 中没有音标，使用顶层的 phonetic 字段
+        if phonetic == "" && result[0].Phonetic != "" {
+            phonetic = result[0].Phonetic
+        }
     }
 
-    // 如果没有获取到音频URL，使用Google TTS作为备用
+    // 如果没有获取到音频URL，使用有道翻译的 TTS 服务作为备用
     if audioURL == "" {
-        audioURL = fmt.Sprintf("https://translate.google.com/translate_tts?ie=UTF-8&q=%s&tl=en&client=tw-ob", word)
+        // 使用有道翻译的 TTS 服务，提供 mp3 格式音频
+        audioURL = fmt.Sprintf("https://dict.youdao.com/dictvoice?audio=%s&type=2", url.QueryEscape(word))
+    }
+
+    // 确保音频URL是HTTPS的
+    if audioURL != "" && !strings.HasPrefix(audioURL, "https://") {
+        audioURL = "https://" + strings.TrimPrefix(audioURL, "http://")
     }
 
     return phonetic, audioURL, nil
