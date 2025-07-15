@@ -31,7 +31,7 @@ type Word struct {
 
 func initDB() {
     var err error
-    db, err = gorm.Open("mysql", "root:haiyu198977@tcp(nps.tanghaiyu.com:8037)/word_dict?charset=utf8&parseTime=True&loc=Local")
+    db, err = gorm.Open("mysql", "root:root@tcp(127.0.0.1:8037)/word_dict?charset=utf8&parseTime=True&loc=Local")
     if err != nil {
         panic("Failed to connect to database")
     }
